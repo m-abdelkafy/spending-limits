@@ -43,9 +43,7 @@ struct ExpenseDetailView: View {
             Button("Edit") { isEditing = true }
         }
         .sheet(isPresented: $isEditing) {
-            NavigationStack {
-                AddExpenseView(editing: expense, onSaved: { isEditing = false })
-            }
+            AddExpenseView(editing: expense, onSaved: { isEditing = false })
         }
     }
 }

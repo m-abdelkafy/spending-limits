@@ -8,6 +8,7 @@ struct TagsView: View {
 
     @State private var renaming: Tag?
     @State private var renameText = ""
+    @State private var renameError: String?
 
     var body: some View {
         List {
@@ -40,18 +41,57 @@ struct TagsView: View {
         .navigationTitle("Tags")
         .alert("Rename tag", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
             TextField("Name", text: $renameText)
-            Button("Save") {
-                if let tag = renaming {
-                    let trimmed = renameText.trimmingCharacters(in: .whitespaces)
-                    if !trimmed.isEmpty {
-                        tag.name = trimmed
-                        tag.normalizedName = Tag.normalize(trimmed)
-                        try? context.save()
-                    }
-                }
-                renaming = nil
-            }
+            Button("Save") { commitRename() }
             Button("Cancel", role: .cancel) { renaming = nil }
+        }
+        .alert(
+            "Couldn’t rename tag",
+            isPresented: Binding(get: { renameError != nil }, set: { if !$0 { renameError = nil } })
+        ) {
+            Button("OK", role: .cancel) { renameError = nil }
+        } message: {
+            Text(renameError ?? "")
+        }
+    }
+
+    private func commitRename() {
+        guard let tag = renaming else { return }
+        let trimmed = renameText.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else {
+            renaming = nil
+            return
+        }
+        let normalized = Tag.normalize(trimmed)
+
+        // No-op rename — same name (possibly different casing) on the same tag.
+        if normalized == tag.normalizedName {
+            tag.name = trimmed
+            saveOrFail(tag: tag, originalName: tag.name, originalNormalized: tag.normalizedName)
+            renaming = nil
+            return
+        }
+
+        // Reject if another tag already owns this normalized name.
+        if tags.contains(where: { $0.id != tag.id && $0.normalizedName == normalized }) {
+            renameError = "A tag named “\(trimmed)” already exists."
+            return
+        }
+
+        let originalName = tag.name
+        let originalNormalized = tag.normalizedName
+        tag.name = trimmed
+        tag.normalizedName = normalized
+        saveOrFail(tag: tag, originalName: originalName, originalNormalized: originalNormalized)
+        renaming = nil
+    }
+
+    private func saveOrFail(tag: Tag, originalName: String, originalNormalized: String) {
+        do {
+            try context.save()
+        } catch {
+            tag.name = originalName
+            tag.normalizedName = originalNormalized
+            renameError = error.localizedDescription
         }
     }
 
