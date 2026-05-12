@@ -19,6 +19,11 @@ struct SettingsView: View {
                 } label: {
                     Label("Tags", systemImage: "tag.fill")
                 }
+                NavigationLink {
+                    ImportExportView()
+                } label: {
+                    Label("Import / Export", systemImage: "square.and.arrow.up.on.square.fill")
+                }
             }
             .navigationTitle("Settings")
         }
