@@ -34,10 +34,9 @@ struct ImportExportView: View {
             }
         }
         .navigationTitle("Import / Export")
-        .sheet(isPresented: $isShowingShareSheet) {
-            ShareSheet(urls: exportURLs)
-                .ignoresSafeArea()
-        }
+        .background(
+            ActivityPresenter(urls: exportURLs, isPresented: $isShowingShareSheet)
+        )
         .sheet(isPresented: $isShowingFilePicker) {
             DocumentPicker(types: [.commaSeparatedText]) { urls in
                 importData(from: urls)
@@ -96,14 +95,22 @@ struct ImportExportView: View {
 
 // MARK: - UIKit wrappers
 
-private struct ShareSheet: UIViewControllerRepresentable {
+/// Presents UIActivityViewController from a hidden UIViewController in the background,
+/// avoiding the blank-sheet bug that occurs when wrapping it directly in a SwiftUI .sheet.
+private struct ActivityPresenter: UIViewControllerRepresentable {
     let urls: [URL]
+    @Binding var isPresented: Bool
 
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: urls, applicationActivities: nil)
+    func makeUIViewController(context: Context) -> UIViewController {
+        UIViewController()
     }
 
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        guard isPresented, uiViewController.presentedViewController == nil else { return }
+        let vc = UIActivityViewController(activityItems: urls, applicationActivities: nil)
+        vc.completionWithItemsHandler = { _, _, _, _ in isPresented = false }
+        uiViewController.present(vc, animated: true)
+    }
 }
 
 private struct DocumentPicker: UIViewControllerRepresentable {
