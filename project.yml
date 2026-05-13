@@ -33,3 +33,4 @@ targets:
         CODE_SIGN_STYLE: Manual
         CODE_SIGN_IDENTITY: "iPhone Distribution"
         VERSIONING_SYSTEM: apple-generic
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
