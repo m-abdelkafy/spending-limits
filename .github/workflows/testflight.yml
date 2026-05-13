@@ -39,6 +39,26 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
 
+      - name: Validate secrets
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_PROVISIONING_PROFILE_NAME: ${{ secrets.APPLE_PROVISIONING_PROFILE_NAME }}
+        run: |
+          missing=()
+          [ -z "$ASC_KEY_ID" ]                   && missing+=("ASC_KEY_ID")
+          [ -z "$ASC_ISSUER_ID" ]                && missing+=("ASC_ISSUER_ID")
+          [ -z "$ASC_PRIVATE_KEY" ]              && missing+=("ASC_PRIVATE_KEY")
+          [ -z "$APPLE_TEAM_ID" ]                && missing+=("APPLE_TEAM_ID")
+          [ -z "$APPLE_PROVISIONING_PROFILE_NAME" ] && missing+=("APPLE_PROVISIONING_PROFILE_NAME")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "ERROR: The following required secrets are not set: ${missing[*]}"
+            exit 1
+          fi
+          echo "All required secrets are present."
+
       - name: Build and upload to TestFlight
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
