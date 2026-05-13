@@ -22,7 +22,12 @@ jobs:
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
           KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
-          echo "$CERTIFICATE_BASE64" | tr -d '\n' | base64 --decode > $RUNNER_TEMP/certificate.p12
+          python3 -c "
+import base64, os
+data = base64.b64decode(os.environ['CERTIFICATE_BASE64'])
+open('$RUNNER_TEMP/certificate.p12', 'wb').write(data)
+print(f'Decoded certificate: {len(data)} bytes')
+"
           security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
@@ -35,7 +40,12 @@ jobs:
           PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
         run: |
           PP_PATH=$RUNNER_TEMP/profile.mobileprovision
-          echo "$PROVISIONING_PROFILE_BASE64" | tr -d '\n' | base64 --decode > $PP_PATH
+          python3 -c "
+import base64, os
+data = base64.b64decode(os.environ['PROVISIONING_PROFILE_BASE64'])
+open('$PP_PATH', 'wb').write(data)
+print(f'Decoded profile: {len(data)} bytes')
+"
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
 
