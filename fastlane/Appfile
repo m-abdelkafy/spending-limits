@@ -1,0 +1,2 @@
+app_identifier("com.expensetracker.kafy")
+apple_team_id(ENV["APPLE_TEAM_ID"])
