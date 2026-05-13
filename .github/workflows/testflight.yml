@@ -1,7 +1,7 @@
 name: TestFlight
 
 on:
-  workflow_dispatch:
+  push:
 
 jobs:
   testflight:
