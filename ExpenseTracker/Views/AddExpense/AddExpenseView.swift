@@ -15,9 +15,11 @@ struct AddExpenseView: View {
     private let editing: Expense?
     private let onSaved: (() -> Void)?
 
+    @State private var kind: TransactionKind = .expense
     @State private var amountString: String = ""
     @State private var selectedCategory: Category?
     @State private var selectedAccount: Account?
+    @State private var selectedToAccount: Account?
     @State private var selectedTagIDs: Set<UUID> = []
     @State private var date: Date = .now
     @State private var note: String = ""
@@ -38,12 +40,27 @@ struct AddExpenseView: View {
 
     private var canSave: Bool {
         guard let value = amountDecimal, value > 0 else { return false }
-        return selectedCategory != nil && selectedAccount != nil
+        switch kind {
+        case .expense, .income:
+            return selectedCategory != nil && selectedAccount != nil
+        case .transfer:
+            guard let from = selectedAccount, let to = selectedToAccount else { return false }
+            return from.id != to.id
+        }
     }
 
     var body: some View {
         NavigationStack {
             Form {
+                Section("Type") {
+                    Picker("Type", selection: $kind) {
+                        ForEach(TransactionKind.allCases) { k in
+                            Text(k.displayName).tag(k)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+
                 Section("Amount") {
                     HStack {
                         Text(CurrencyFormatter.currencySymbol)
@@ -57,24 +74,26 @@ struct AddExpenseView: View {
                     }
                 }
 
-                Section("Category") {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            ForEach(categories) { category in
-                                CategoryChip(
-                                    category: category,
-                                    isSelected: selectedCategory?.id == category.id
-                                ) {
-                                    selectedCategory = category
+                if kind != .transfer {
+                    Section("Category") {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 12) {
+                                ForEach(categories) { category in
+                                    CategoryChip(
+                                        category: category,
+                                        isSelected: selectedCategory?.id == category.id
+                                    ) {
+                                        selectedCategory = category
+                                    }
                                 }
                             }
+                            .padding(.vertical, 4)
                         }
-                        .padding(.vertical, 4)
                     }
                 }
 
-                Section("Account") {
-                    Picker("Account", selection: Binding(
+                Section(kind == .transfer ? "From" : "Account") {
+                    Picker(kind == .transfer ? "From" : "Account", selection: Binding(
                         get: { selectedAccount?.id },
                         set: { newID in
                             selectedAccount = accounts.first { $0.id == newID }
@@ -84,6 +103,23 @@ struct AddExpenseView: View {
                         ForEach(accounts) { account in
                             Label(account.name, systemImage: account.type.icon)
                                 .tag(Optional(account.id))
+                        }
+                    }
+                }
+
+                if kind == .transfer {
+                    Section("To") {
+                        Picker("To", selection: Binding(
+                            get: { selectedToAccount?.id },
+                            set: { newID in
+                                selectedToAccount = accounts.first { $0.id == newID }
+                            }
+                        )) {
+                            Text("Select…").tag(UUID?.none)
+                            ForEach(accounts) { account in
+                                Label(account.name, systemImage: account.type.icon)
+                                    .tag(Optional(account.id))
+                            }
                         }
                     }
                 }
@@ -112,7 +148,7 @@ struct AddExpenseView: View {
                     }
                 }
             }
-            .navigationTitle(editing == nil ? "New Expense" : "Edit Expense")
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -130,17 +166,29 @@ struct AddExpenseView: View {
         }
     }
 
+    private var navigationTitle: String {
+        if editing != nil {
+            return "Edit \(kind.displayName)"
+        }
+        return "New \(kind.displayName)"
+    }
+
     private func load() {
         if let editing {
+            kind = editing.kind
             amountString = NSDecimalNumber(decimal: editing.amount).stringValue
             selectedCategory = editing.category
             selectedAccount = editing.account
+            selectedToAccount = editing.toAccount
             selectedTagIDs = Set(editing.tags.map(\.id))
             date = editing.date
             note = editing.note ?? ""
         } else {
             if selectedCategory == nil { selectedCategory = categories.first }
             if selectedAccount == nil { selectedAccount = accounts.first }
+            if selectedToAccount == nil {
+                selectedToAccount = accounts.first { $0.id != selectedAccount?.id }
+            }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 amountFocused = true
             }
@@ -167,13 +215,32 @@ struct AddExpenseView: View {
             validationError = "Enter an amount greater than zero."
             return
         }
-        guard let category = selectedCategory else {
-            validationError = "Pick a category."
+        guard let account = selectedAccount else {
+            validationError = kind == .transfer ? "Pick a source account." : "Pick an account."
             return
         }
-        guard let account = selectedAccount else {
-            validationError = "Pick an account."
-            return
+
+        let category: Category?
+        let toAccount: Account?
+        switch kind {
+        case .expense, .income:
+            guard let chosen = selectedCategory else {
+                validationError = "Pick a category."
+                return
+            }
+            category = chosen
+            toAccount = nil
+        case .transfer:
+            guard let dest = selectedToAccount else {
+                validationError = "Pick a destination account."
+                return
+            }
+            guard dest.id != account.id else {
+                validationError = "From and To must be different accounts."
+                return
+            }
+            category = nil
+            toAccount = dest
         }
         validationError = nil
 
@@ -182,8 +249,10 @@ struct AddExpenseView: View {
 
         if let editing {
             editing.amount = amount
+            editing.kind = kind
             editing.category = category
             editing.account = account
+            editing.toAccount = toAccount
             editing.tags = chosenTags
             editing.date = date
             editing.note = trimmedNote.isEmpty ? nil : trimmedNote
@@ -192,8 +261,10 @@ struct AddExpenseView: View {
                 amount: amount,
                 date: date,
                 note: trimmedNote.isEmpty ? nil : trimmedNote,
+                kind: kind,
                 category: category,
                 account: account,
+                toAccount: toAccount,
                 tags: chosenTags
             )
             context.insert(expense)

@@ -46,7 +46,7 @@ struct ExpenseListView: View {
     }
 
     private func total(of items: [Expense]) -> Decimal {
-        items.reduce(Decimal(0)) { $0 + $1.amount }
+        items.filter { $0.kind == .expense }.reduce(Decimal(0)) { $0 + $1.amount }
     }
 
     private func delete(at offsets: IndexSet, in items: [Expense]) {
