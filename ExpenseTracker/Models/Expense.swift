@@ -32,7 +32,7 @@ final class Expense {
     var date: Date
     var note: String?
     var createdAt: Date
-    var kindRaw: String
+    var kindRaw: String = TransactionKind.expense.rawValue
 
     var category: Category?
     var account: Account?

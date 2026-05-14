@@ -38,6 +38,12 @@ struct AddExpenseView: View {
         return Decimal(string: trimmed)
     }
 
+    private var availableKinds: [TransactionKind] {
+        accounts.count >= 2
+            ? TransactionKind.allCases
+            : TransactionKind.allCases.filter { $0 != .transfer }
+    }
+
     private var canSave: Bool {
         guard let value = amountDecimal, value > 0 else { return false }
         switch kind {
@@ -54,11 +60,16 @@ struct AddExpenseView: View {
             Form {
                 Section("Type") {
                     Picker("Type", selection: $kind) {
-                        ForEach(TransactionKind.allCases) { k in
+                        ForEach(availableKinds) { k in
                             Text(k.displayName).tag(k)
                         }
                     }
                     .pickerStyle(.segmented)
+                    .onChange(of: accounts.count) { _, newValue in
+                        if newValue < 2 && kind == .transfer {
+                            kind = .expense
+                        }
+                    }
                 }
 
                 Section("Amount") {

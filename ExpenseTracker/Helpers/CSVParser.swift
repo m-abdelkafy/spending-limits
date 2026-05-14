@@ -34,15 +34,13 @@ enum CSVParser {
                 } else if ch == "," {
                     current.append(field)
                     field = ""
-                } else if ch == "\n" || ch == "\r\n" {
+                } else if ch == "\n" || ch == "\r\n" || ch == "\r" {
                     current.append(field)
                     field = ""
                     if !(current.count == 1 && current[0].isEmpty) {
                         rows.append(current)
                     }
                     current = []
-                } else if ch == "\r" {
-                    // ignore lone CR; the LF that typically follows will commit the row
                 } else {
                     field.append(ch)
                 }

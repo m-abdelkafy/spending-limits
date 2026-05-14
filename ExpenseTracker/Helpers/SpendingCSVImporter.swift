@@ -44,8 +44,8 @@ struct SpendingCSVImporter {
         var categoryCache: [String: Category] = [:]
         var accountCache: [String: Account] = [:]
         var tagCache: [String: Tag] = [:]
-        var nextCategorySort = try nextSortOrder(Category.self, context: context)
-        var nextAccountSort = try nextSortOrder(Account.self, context: context)
+        var nextCategorySort = try nextCategorySortOrder(context: context)
+        var nextAccountSort = try nextAccountSortOrder(context: context)
 
         // Track transfer pairs so we only insert one Expense per pair.
         var seenTransferKeys = Set<String>()
@@ -173,7 +173,7 @@ struct SpendingCSVImporter {
     }
 
     private func transferKey(date: Date, amount: Decimal, from: String, to: String) -> String {
-        "\(Int(date.timeIntervalSince1970))|\(amount)|\(from)|\(to)"
+        "\(date.timeIntervalSince1970)|\(amount)|\(from)|\(to)"
     }
 
     private func resolveAccount(
@@ -237,9 +237,14 @@ struct SpendingCSVImporter {
         return tag
     }
 
-    private func nextSortOrder<T: PersistentModel>(_ type: T.Type, context: ModelContext) throws -> Int {
-        let all = try context.fetch(FetchDescriptor<T>())
-        return all.count
+    private func nextAccountSortOrder(context: ModelContext) throws -> Int {
+        let all = try context.fetch(FetchDescriptor<Account>())
+        return (all.map(\.sortOrder).max() ?? -1) + 1
+    }
+
+    private func nextCategorySortOrder(context: ModelContext) throws -> Int {
+        let all = try context.fetch(FetchDescriptor<Category>())
+        return (all.map(\.sortOrder).max() ?? -1) + 1
     }
 
     private static let isoFormatter: ISO8601DateFormatter = {
