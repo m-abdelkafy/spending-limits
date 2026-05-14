@@ -30,7 +30,7 @@ struct DataExporter {
     // MARK: - CSV builders
 
     private func expensesCSV(_ expenses: [Expense]) -> String {
-        var rows = ["id,amount,date,note,createdAt,category,account,tags"]
+        var rows = ["id,amount,date,note,createdAt,category,account,tags,kind,toAccount"]
         for e in expenses {
             rows.append([
                 e.id.uuidString,
@@ -41,6 +41,8 @@ struct DataExporter {
                 e.category?.name ?? "",
                 e.account?.name ?? "",
                 e.tags.map(\.name).joined(separator: "|"),
+                e.kind.rawValue,
+                e.toAccount?.name ?? "",
             ].map(csvEscape).joined(separator: ","))
         }
         return rows.joined(separator: "\n")

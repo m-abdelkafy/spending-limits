@@ -38,6 +38,9 @@ final class Account {
     @Relationship(deleteRule: .nullify, inverse: \Expense.account)
     var expenses: [Expense]
 
+    @Relationship(deleteRule: .nullify, inverse: \Expense.toAccount)
+    var transfersIn: [Expense] = []
+
     var type: AccountType {
         get { AccountType(rawValue: typeRaw) ?? .other }
         set { typeRaw = newValue.rawValue }

@@ -131,9 +131,14 @@ struct DataImporter {
             let categoryName = row[5]
             let accountName = row[6]
             let tagNames = row[7].split(separator: "|").map(String.init).filter { !$0.isEmpty }
+            let kind: TransactionKind = row.count > 8
+                ? TransactionKind(rawValue: row[8]) ?? .expense
+                : .expense
+            let toAccountName = row.count > 9 ? row[9] : ""
 
             let category = categoryName.isEmpty ? nil : try fetchCategory(name: categoryName, context: context)
             let account = accountName.isEmpty ? nil : try fetchAccount(name: accountName, context: context)
+            let toAccount = toAccountName.isEmpty ? nil : try fetchAccount(name: toAccountName, context: context)
             let tags = try tagNames.compactMap { try fetchTag(normalizedName: Tag.normalize($0), context: context) }
 
             let existing = try fetchExpense(id: id, context: context)
@@ -142,8 +147,10 @@ struct DataImporter {
                 expense.date = date
                 expense.note = note
                 expense.createdAt = createdAt
+                expense.kind = kind
                 expense.category = category
                 expense.account = account
+                expense.toAccount = toAccount
                 expense.tags = tags
             } else {
                 let expense = Expense(
@@ -152,8 +159,10 @@ struct DataImporter {
                     date: date,
                     note: note,
                     createdAt: createdAt,
+                    kind: kind,
                     category: category,
                     account: account,
+                    toAccount: toAccount,
                     tags: tags
                 )
                 context.insert(expense)
@@ -198,47 +207,7 @@ struct DataImporter {
     // MARK: - CSV parser
 
     private func parseCSV(url: URL) throws -> [[String]] {
-        let text = try String(contentsOf: url, encoding: .utf8)
-        return text.components(separatedBy: "\n")
-            .filter { !$0.isEmpty }
-            .map { parseCSVRow($0) }
-    }
-
-    private func parseCSVRow(_ row: String) -> [String] {
-        var fields: [String] = []
-        var current = ""
-        var inQuotes = false
-        var i = row.startIndex
-
-        while i < row.endIndex {
-            let ch = row[i]
-            if inQuotes {
-                if ch == "\"" {
-                    let next = row.index(after: i)
-                    if next < row.endIndex && row[next] == "\"" {
-                        current.append("\"")
-                        i = row.index(after: next)
-                        continue
-                    } else {
-                        inQuotes = false
-                    }
-                } else {
-                    current.append(ch)
-                }
-            } else {
-                if ch == "\"" {
-                    inQuotes = true
-                } else if ch == "," {
-                    fields.append(current)
-                    current = ""
-                } else {
-                    current.append(ch)
-                }
-            }
-            i = row.index(after: i)
-        }
-        fields.append(current)
-        return fields
+        try CSVParser.parse(url: url)
     }
 
     private var iso8601: ISO8601DateFormatter {

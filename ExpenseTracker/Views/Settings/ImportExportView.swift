@@ -11,8 +11,10 @@ struct ImportExportView: View {
 
     @State private var isShowingShareSheet = false
     @State private var isShowingFilePicker = false
+    @State private var isShowingSpendingPicker = false
     @State private var exportURLs: [URL] = []
     @State private var importResult: ImportResult?
+    @State private var spendingResult: SpendingImportResult?
     @State private var errorMessage: String?
 
     var body: some View {
@@ -32,14 +34,32 @@ struct ImportExportView: View {
             } footer: {
                 Text("Export produces 4 CSV files: expenses, categories, accounts, and tags. Select all 4 when importing.")
             }
+
+            Section {
+                Button {
+                    isShowingSpendingPicker = true
+                } label: {
+                    Label("Import Spending from CSV", systemImage: "tray.and.arrow.down")
+                }
+            } header: {
+                Text("Third-party CSV")
+            } footer: {
+                Text("Imports a single CSV with columns Date, Amount, Source Account, Target Account, Category, Payee, Tags, Notes, Pending. Missing categories and accounts are created automatically. Transfer pairs are imported as a single transfer.")
+            }
         }
         .navigationTitle("Import / Export")
         .background(
             ActivityPresenter(urls: exportURLs, isPresented: $isShowingShareSheet)
         )
         .sheet(isPresented: $isShowingFilePicker) {
-            DocumentPicker(types: [.commaSeparatedText]) { urls in
+            DocumentPicker(types: [.commaSeparatedText], allowsMultiple: true) { urls in
                 importData(from: urls)
+            }
+            .ignoresSafeArea()
+        }
+        .sheet(isPresented: $isShowingSpendingPicker) {
+            DocumentPicker(types: [.commaSeparatedText], allowsMultiple: false) { urls in
+                importSpendingCSV(from: urls)
             }
             .ignoresSafeArea()
         }
@@ -51,6 +71,16 @@ struct ImportExportView: View {
         } message: {
             if let result = importResult {
                 Text("Imported \(result.summary).")
+            }
+        }
+        .alert("Spending Import Complete", isPresented: Binding(
+            get: { spendingResult != nil },
+            set: { if !$0 { spendingResult = nil } }
+        )) {
+            Button("OK") { spendingResult = nil }
+        } message: {
+            if let result = spendingResult {
+                Text(result.summary)
             }
         }
         .alert("Error", isPresented: Binding(
@@ -91,6 +121,16 @@ struct ImportExportView: View {
             errorMessage = error.localizedDescription
         }
     }
+
+    private func importSpendingCSV(from urls: [URL]) {
+        guard let url = urls.first else { return }
+        do {
+            let importer = SpendingCSVImporter()
+            spendingResult = try importer.importData(from: url, into: context)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
 }
 
 // MARK: - UIKit wrappers
@@ -115,13 +155,14 @@ private struct ActivityPresenter: UIViewControllerRepresentable {
 
 private struct DocumentPicker: UIViewControllerRepresentable {
     let types: [UTType]
+    var allowsMultiple: Bool = true
     let onPick: ([URL]) -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(onPick: onPick) }
 
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: types)
-        picker.allowsMultipleSelection = true
+        picker.allowsMultipleSelection = allowsMultiple
         picker.delegate = context.coordinator
         return picker
     }

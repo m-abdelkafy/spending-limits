@@ -14,14 +14,24 @@ struct ExpenseDetailView: View {
             }
 
             Section("Details") {
+                LabeledContent("Type") {
+                    Text(expense.kind.displayName)
+                }
                 LabeledContent("Date") {
                     Text(expense.date, format: .dateTime.month().day().year().hour().minute())
                 }
-                LabeledContent("Category") {
-                    Text(expense.category?.name ?? "—")
+                if expense.kind != .transfer {
+                    LabeledContent("Category") {
+                        Text(expense.category?.name ?? "—")
+                    }
                 }
-                LabeledContent("Account") {
+                LabeledContent(expense.kind == .transfer ? "From" : "Account") {
                     Text(expense.account?.name ?? "—")
+                }
+                if expense.kind == .transfer {
+                    LabeledContent("To") {
+                        Text(expense.toAccount?.name ?? "—")
+                    }
                 }
                 if let note = expense.note, !note.isEmpty {
                     LabeledContent("Note") {
@@ -37,7 +47,7 @@ struct ExpenseDetailView: View {
                 }
             }
         }
-        .navigationTitle("Expense")
+        .navigationTitle(expense.kind.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             Button("Edit") { isEditing = true }
