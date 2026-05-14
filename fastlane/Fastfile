@@ -7,7 +7,7 @@ platform :ios do
       key_id: ENV["ASC_KEY_ID"],
       issuer_id: ENV["ASC_ISSUER_ID"],
       key_content: ENV["ASC_PRIVATE_KEY"],
-      is_key_content_base64: true
+      is_key_content_base64: false
     )
 
     increment_build_number(
@@ -20,6 +20,7 @@ platform :ios do
       project: "ExpenseTracker.xcodeproj",
       configuration: "Release",
       export_method: "app-store",
+      xcargs: "PROVISIONING_PROFILE_SPECIFIER='#{ENV["APPLE_PROVISIONING_PROFILE_NAME"]}' CODE_SIGN_IDENTITY='iPhone Distribution'",
       export_options: {
         method: "app-store",
         teamID: ENV["APPLE_TEAM_ID"],
