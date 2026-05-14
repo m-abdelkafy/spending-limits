@@ -2,8 +2,11 @@ import SwiftUI
 import SwiftData
 
 struct ExpenseDetailView: View {
+    @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
     @Bindable var expense: Expense
     @State private var isEditing = false
+    @State private var isConfirmingDelete = false
 
     var body: some View {
         Form {
@@ -46,6 +49,18 @@ struct ExpenseDetailView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+
+            Section {
+                Button(role: .destructive) {
+                    isConfirmingDelete = true
+                } label: {
+                    HStack {
+                        Spacer()
+                        Text("Delete")
+                        Spacer()
+                    }
+                }
+            }
         }
         .navigationTitle(expense.kind.displayName)
         .navigationBarTitleDisplayMode(.inline)
@@ -54,6 +69,14 @@ struct ExpenseDetailView: View {
         }
         .sheet(isPresented: $isEditing) {
             AddExpenseView(editing: expense, onSaved: { isEditing = false })
+        }
+        .confirmationDialog("Delete this transaction?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                context.delete(expense)
+                try? context.save()
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) {}
         }
     }
 }
