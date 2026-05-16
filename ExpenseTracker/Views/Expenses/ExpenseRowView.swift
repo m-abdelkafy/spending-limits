@@ -30,6 +30,7 @@ struct ExpenseRowView: View {
                 .font(.body.weight(.semibold))
                 .monospacedDigit()
                 .foregroundStyle(amountColor)
+                .privacyBlur()
         }
         .padding(.vertical, 4)
     }

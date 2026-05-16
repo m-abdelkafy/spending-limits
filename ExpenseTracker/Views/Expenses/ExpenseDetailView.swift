@@ -11,6 +11,7 @@ struct ExpenseDetailView: View {
                 Text(CurrencyFormatter.string(from: expense.amount))
                     .font(.largeTitle.weight(.semibold))
                     .monospacedDigit()
+                    .privacyBlur()
             }
 
             Section("Details") {

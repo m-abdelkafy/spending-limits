@@ -4,22 +4,28 @@ struct ContentView: View {
     @State private var selection: Tab = .expenses
 
     enum Tab: Hashable {
-        case expenses, add, settings
+        case overview, expenses, budget, settings
     }
 
     var body: some View {
         TabView(selection: $selection) {
+            OverviewView()
+                .tabItem {
+                    Label("Overview", systemImage: "chart.pie.fill")
+                }
+                .tag(Tab.overview)
+
             ExpenseListView()
                 .tabItem {
                     Label("Expenses", systemImage: "list.bullet.rectangle")
                 }
                 .tag(Tab.expenses)
 
-            AddExpenseView(onSaved: { selection = .expenses })
+            BudgetView()
                 .tabItem {
-                    Label("Add", systemImage: "plus.circle.fill")
+                    Label("Budget", systemImage: "chart.bar.fill")
                 }
-                .tag(Tab.add)
+                .tag(Tab.budget)
 
             SettingsView()
                 .tabItem {

@@ -6,6 +6,8 @@ struct ExpenseListView: View {
     @Query(sort: [SortDescriptor(\Expense.date, order: .reverse), SortDescriptor(\Expense.createdAt, order: .reverse)])
     private var expenses: [Expense]
 
+    @State private var showAdd = false
+
     private var grouped: [(day: Date, items: [Expense])] {
         let cal = Calendar.current
         let dict = Dictionary(grouping: expenses) { cal.startOfDay(for: $0.date) }
@@ -16,32 +18,55 @@ struct ExpenseListView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if expenses.isEmpty {
-                    EmptyExpensesView()
-                } else {
-                    List {
-                        ForEach(grouped, id: \.day) { group in
-                            Section {
-                                ForEach(group.items) { expense in
-                                    NavigationLink {
-                                        ExpenseDetailView(expense: expense)
-                                    } label: {
-                                        ExpenseRowView(expense: expense)
+            ZStack(alignment: .bottomTrailing) {
+                Group {
+                    if expenses.isEmpty {
+                        EmptyExpensesView()
+                    } else {
+                        List {
+                            ForEach(grouped, id: \.day) { group in
+                                Section {
+                                    ForEach(group.items) { expense in
+                                        NavigationLink {
+                                            ExpenseDetailView(expense: expense)
+                                        } label: {
+                                            ExpenseRowView(expense: expense)
+                                        }
                                     }
+                                    .onDelete { offsets in
+                                        delete(at: offsets, in: group.items)
+                                    }
+                                } header: {
+                                    DayHeaderView(day: group.day, total: total(of: group.items))
                                 }
-                                .onDelete { offsets in
-                                    delete(at: offsets, in: group.items)
-                                }
-                            } header: {
-                                DayHeaderView(day: group.day, total: total(of: group.items))
                             }
                         }
+                        .listStyle(.insetGrouped)
                     }
-                    .listStyle(.insetGrouped)
                 }
+
+                Button {
+                    showAdd = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.title.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 56, height: 56)
+                        .background(Circle().fill(Color.accentColor))
+                        .shadow(radius: 6, y: 3)
+                }
+                .padding(20)
+                .accessibilityLabel("Add expense")
             }
             .navigationTitle("Expenses")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    PrivacyToggleButton()
+                }
+            }
+            .sheet(isPresented: $showAdd) {
+                AddExpenseView(onSaved: { showAdd = false })
+            }
         }
     }
 
@@ -69,6 +94,7 @@ private struct DayHeaderView: View {
             Text(CurrencyFormatter.string(from: total))
                 .font(.subheadline.weight(.semibold))
                 .monospacedDigit()
+                .privacyBlur()
         }
         .textCase(nil)
     }
@@ -79,7 +105,7 @@ private struct EmptyExpensesView: View {
         ContentUnavailableView(
             "No expenses yet",
             systemImage: "tray",
-            description: Text("Tap the Add tab or use the “Add expense to ExpenseTracker” shortcut to get started.")
+            description: Text("Tap the + button or use the “Add expense to ExpenseTracker” shortcut to get started.")
         )
     }
 }
