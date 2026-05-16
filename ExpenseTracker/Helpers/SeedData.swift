@@ -33,7 +33,8 @@ enum SeedData {
                     name: def.name,
                     icon: def.icon,
                     colorHex: def.colorHex,
-                    sortOrder: index
+                    sortOrder: index,
+                    isDefault: true
                 )
                 context.insert(cat)
             }

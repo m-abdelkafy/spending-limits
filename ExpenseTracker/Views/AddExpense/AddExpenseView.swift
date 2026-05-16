@@ -25,6 +25,7 @@ struct AddExpenseView: View {
     @State private var note: String = ""
     @State private var newTagText: String = ""
     @State private var validationError: String?
+    @State private var showCategoryPicker = false
     @FocusState private var amountFocused: Bool
 
     init(editing: Expense? = nil, onSaved: (() -> Void)? = nil) {
@@ -57,115 +58,33 @@ struct AddExpenseView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Type") {
-                    Picker("Type", selection: $kind) {
-                        ForEach(availableKinds) { k in
-                            Text(k.displayName).tag(k)
-                        }
+            ScrollView {
+                VStack(spacing: 0) {
+                    typePickerSection
+                    amountCard
+                    detailsCard
+                    if !allTags.isEmpty || !selectedTagIDs.isEmpty {
+                        SectionHeader("Tags")
+                        tagsCard
                     }
-                    .pickerStyle(.segmented)
-                    .onChange(of: accounts.count) { _, newValue in
-                        if newValue < 2 && kind == .transfer {
-                            kind = .expense
-                        }
+                    SectionHeader("Note")
+                    noteCard
+                    if let error = validationError {
+                        Text(error)
+                            .font(.footnote)
+                            .foregroundStyle(.red)
+                            .padding(.horizontal, 32)
+                            .padding(.top, 8)
                     }
-                }
-
-                Section("Amount") {
-                    HStack {
-                        Text(CurrencyFormatter.currencySymbol)
-                            .font(.title2)
-                            .foregroundStyle(.secondary)
-                        TextField("0.00", text: $amountString)
-                            .keyboardType(.decimalPad)
-                            .font(.system(size: 36, weight: .semibold, design: .rounded))
-                            .monospacedDigit()
-                            .focused($amountFocused)
-                    }
-                }
-
-                if kind != .transfer {
-                    Section("Category") {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 12) {
-                                ForEach(categories) { category in
-                                    CategoryChip(
-                                        category: category,
-                                        isSelected: selectedCategory?.id == category.id
-                                    ) {
-                                        selectedCategory = category
-                                    }
-                                }
-                            }
-                            .padding(.vertical, 4)
-                        }
-                    }
-                }
-
-                Section(kind == .transfer ? "From" : "Account") {
-                    Picker(kind == .transfer ? "From" : "Account", selection: Binding(
-                        get: { selectedAccount?.id },
-                        set: { newID in
-                            selectedAccount = accounts.first { $0.id == newID }
-                        }
-                    )) {
-                        Text("Select…").tag(UUID?.none)
-                        ForEach(accounts) { account in
-                            Label(account.name, systemImage: account.type.icon)
-                                .tag(Optional(account.id))
-                        }
-                    }
-                }
-
-                if kind == .transfer {
-                    Section("To") {
-                        Picker("To", selection: Binding(
-                            get: { selectedToAccount?.id },
-                            set: { newID in
-                                selectedToAccount = accounts.first { $0.id == newID }
-                            }
-                        )) {
-                            Text("Select…").tag(UUID?.none)
-                            ForEach(accounts) { account in
-                                Label(account.name, systemImage: account.type.icon)
-                                    .tag(Optional(account.id))
-                            }
-                        }
-                    }
-                }
-
-                Section("Tags") {
-                    TagPicker(
-                        allTags: allTags,
-                        selectedIDs: $selectedTagIDs,
-                        newTagText: $newTagText,
-                        onAddNew: addNewTag
-                    )
-                }
-
-                Section("When") {
-                    DatePicker("Date", selection: $date, displayedComponents: [.date, .hourAndMinute])
-                }
-
-                Section("Note") {
-                    TextField("Optional", text: $note, axis: .vertical)
-                        .lineLimit(1...4)
-                }
-
-                if let error = validationError {
-                    Section {
-                        Text(error).foregroundStyle(.red)
-                    }
+                    Color.clear.frame(height: 24)
                 }
             }
+            .background(Color(.systemGroupedBackground))
             .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    if editing != nil {
-                        Button("Cancel") { onSaved?() ; dismiss() }
-                    }
+                    Button("Cancel") { onSaved?() ; dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save)
@@ -173,7 +92,179 @@ struct AddExpenseView: View {
                         .fontWeight(.semibold)
                 }
             }
+            .sheet(isPresented: $showCategoryPicker) {
+                CategoryPickerView(selection: $selectedCategory)
+            }
             .onAppear(perform: load)
+        }
+    }
+
+    private var typePickerSection: some View {
+        Picker("Type", selection: $kind) {
+            ForEach(availableKinds) { k in
+                Text(k.displayName).tag(k)
+            }
+        }
+        .pickerStyle(.segmented)
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
+        .onChange(of: accounts.count) { _, newValue in
+            if newValue < 2 && kind == .transfer { kind = .expense }
+        }
+    }
+
+    private var amountCard: some View {
+        InsetCard(padding: EdgeInsets(top: 14, leading: 18, bottom: 16, trailing: 18)) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("AMOUNT")
+                    .font(.system(size: 11, weight: .semibold))
+                    .kerning(0.4)
+                    .foregroundStyle(.secondary)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(CurrencyFormatter.currencySymbol)
+                        .font(.system(size: 24))
+                        .foregroundStyle(.secondary)
+                    TextField("0", text: $amountString)
+                        .keyboardType(.decimalPad)
+                        .font(.system(size: 42, weight: .semibold))
+                        .monospacedDigit()
+                        .focused($amountFocused)
+                }
+            }
+        }
+        .padding(.top, 14)
+    }
+
+    private var detailsCard: some View {
+        InsetCard(padding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)) {
+            VStack(spacing: 0) {
+                if kind != .transfer {
+                    categoryRow
+                    Divider().padding(.leading, 14)
+                }
+                accountRow(label: kind == .transfer ? "From" : "Account", binding: $selectedAccount)
+                if kind == .transfer {
+                    Divider().padding(.leading, 14)
+                    accountRow(label: "To", binding: $selectedToAccount)
+                }
+                Divider().padding(.leading, 14)
+                dateRow
+            }
+        }
+        .padding(.top, 14)
+    }
+
+    private var categoryRow: some View {
+        Button {
+            showCategoryPicker = true
+        } label: {
+            HStack(spacing: 12) {
+                Text("Category")
+                    .font(.system(size: 15))
+                    .foregroundStyle(.primary)
+                Spacer()
+                if let category = selectedCategory {
+                    CategoryTile(category: category, size: 24)
+                    Text(category.name)
+                        .font(.system(size: 15))
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Choose")
+                        .font(.system(size: 15))
+                        .foregroundStyle(.secondary)
+                }
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func accountRow(label: String, binding: Binding<Account?>) -> some View {
+        HStack(spacing: 12) {
+            Text(label)
+                .font(.system(size: 15))
+            Spacer()
+            Menu {
+                ForEach(accounts) { account in
+                    Button {
+                        binding.wrappedValue = account
+                    } label: {
+                        Label(account.name, systemImage: account.type.icon)
+                    }
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    if let acc = binding.wrappedValue {
+                        Image(systemName: acc.type.icon)
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                        Text(acc.name)
+                            .font(.system(size: 15))
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("Choose")
+                            .font(.system(size: 15))
+                            .foregroundStyle(.secondary)
+                    }
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+    }
+
+    private var dateRow: some View {
+        HStack(spacing: 12) {
+            Text("Date")
+                .font(.system(size: 15))
+            Spacer()
+            DatePicker("", selection: $date, displayedComponents: [.date, .hourAndMinute])
+                .labelsHidden()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+    }
+
+    private var tagsCard: some View {
+        InsetCard(padding: EdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14)) {
+            VStack(alignment: .leading, spacing: 12) {
+                if !allTags.isEmpty {
+                    FlowLayout(spacing: 8) {
+                        ForEach(allTags) { tag in
+                            TagChip(name: tag.name, isSelected: selectedTagIDs.contains(tag.id)) {
+                                if selectedTagIDs.contains(tag.id) {
+                                    selectedTagIDs.remove(tag.id)
+                                } else {
+                                    selectedTagIDs.insert(tag.id)
+                                }
+                            }
+                        }
+                    }
+                }
+                HStack {
+                    TextField("New tag", text: $newTagText)
+                        .textInputAutocapitalization(.never)
+                        .submitLabel(.done)
+                        .onSubmit(addNewTag)
+                    Button("Add", action: addNewTag)
+                        .disabled(newTagText.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+        }
+    }
+
+    private var noteCard: some View {
+        InsetCard(padding: EdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14)) {
+            TextField("Optional", text: $note, axis: .vertical)
+                .lineLimit(1...4)
+                .font(.system(size: 15))
         }
     }
 
@@ -195,7 +286,7 @@ struct AddExpenseView: View {
             date = editing.date
             note = editing.note ?? ""
         } else {
-            if selectedCategory == nil { selectedCategory = categories.first }
+            if selectedCategory == nil { selectedCategory = categories.first { $0.isDefault } ?? categories.first }
             if selectedAccount == nil { selectedAccount = accounts.first }
             if selectedToAccount == nil {
                 selectedToAccount = accounts.first { $0.id != selectedAccount?.id }
@@ -286,89 +377,10 @@ struct AddExpenseView: View {
             #if canImport(UIKit)
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             #endif
-            if editing == nil {
-                resetForm()
-            }
             onSaved?()
-            if editing != nil { dismiss() }
+            dismiss()
         } catch {
             validationError = "Could not save: \(error.localizedDescription)"
-        }
-    }
-
-    private func resetForm() {
-        amountString = ""
-        note = ""
-        selectedTagIDs.removeAll()
-        date = .now
-    }
-}
-
-private struct CategoryChip: View {
-    let category: Category
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        let color = Color(hex: category.colorHex)
-        Button(action: action) {
-            VStack(spacing: 6) {
-                ZStack {
-                    Circle()
-                        .fill(isSelected ? color : color.opacity(0.18))
-                    Image(systemName: category.icon)
-                        .foregroundStyle(isSelected ? .white : color)
-                        .font(.system(size: 18, weight: .semibold))
-                }
-                .frame(width: 48, height: 48)
-                Text(category.name)
-                    .font(.caption)
-                    .foregroundStyle(.primary)
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(category.name)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-}
-
-private struct TagPicker: View {
-    let allTags: [Tag]
-    @Binding var selectedIDs: Set<UUID>
-    @Binding var newTagText: String
-    let onAddNew: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if allTags.isEmpty {
-                Text("No tags yet — add one below.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else {
-                FlowLayout(spacing: 8) {
-                    ForEach(allTags) { tag in
-                        TagChip(
-                            name: tag.name,
-                            isSelected: selectedIDs.contains(tag.id)
-                        ) {
-                            if selectedIDs.contains(tag.id) {
-                                selectedIDs.remove(tag.id)
-                            } else {
-                                selectedIDs.insert(tag.id)
-                            }
-                        }
-                    }
-                }
-            }
-
-            HStack {
-                TextField("New tag", text: $newTagText)
-                    .textInputAutocapitalization(.never)
-                    .submitLabel(.done)
-                    .onSubmit(onAddNew)
-                Button("Add", action: onAddNew)
-                    .disabled(newTagText.trimmingCharacters(in: .whitespaces).isEmpty)
-            }
         }
     }
 }
@@ -381,11 +393,11 @@ private struct TagChip: View {
     var body: some View {
         Button(action: action) {
             Text("#\(name)")
-                .font(.callout)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                .font(.system(size: 13, weight: .medium))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
                 .background(
-                    Capsule().fill(isSelected ? Color.accentColor : Color.secondary.opacity(0.15))
+                    Capsule().fill(isSelected ? Color.accentColor : Color.secondary.opacity(0.18))
                 )
                 .foregroundStyle(isSelected ? .white : .primary)
         }
