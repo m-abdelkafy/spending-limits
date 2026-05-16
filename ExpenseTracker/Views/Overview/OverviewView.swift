@@ -54,7 +54,7 @@ struct OverviewView: View {
                     SectionHeader("Categories")
                     categoriesCard
 
-                    SectionHeader("Recent", style: .uppercase) {
+                    SectionHeader(title: "Recent", style: .uppercase) {
                         Button("See all") {
                             selection = .expenses
                         }
