@@ -7,10 +7,17 @@ struct ExpenseListView: View {
     private var expenses: [Expense]
 
     @State private var showAdd = false
+    @State private var selectedMonth: Date = Budget.normalize(month: .now)
+
+    private var monthInterval: DateInterval { MonthSummary.interval(of: selectedMonth) }
+
+    private var filteredExpenses: [Expense] {
+        expenses.filter { monthInterval.contains($0.date) }
+    }
 
     private var grouped: [(day: Date, items: [Expense])] {
         let cal = Calendar.current
-        let dict = Dictionary(grouping: expenses) { cal.startOfDay(for: $0.date) }
+        let dict = Dictionary(grouping: filteredExpenses) { cal.startOfDay(for: $0.date) }
         return dict.keys.sorted(by: >).map { key in
             (day: key, items: dict[key] ?? [])
         }
@@ -20,8 +27,8 @@ struct ExpenseListView: View {
         NavigationStack {
             ZStack(alignment: .bottomTrailing) {
                 Group {
-                    if expenses.isEmpty {
-                        EmptyExpensesView()
+                    if filteredExpenses.isEmpty {
+                        EmptyExpensesView(isCurrentMonth: isCurrentMonth)
                     } else {
                         List {
                             ForEach(grouped, id: \.day) { group in
@@ -60,6 +67,9 @@ struct ExpenseListView: View {
             }
             .navigationTitle("Expenses")
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    MonthPickerView(month: $selectedMonth)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     PrivacyToggleButton()
                 }
@@ -68,6 +78,10 @@ struct ExpenseListView: View {
                 AddExpenseView(onSaved: { showAdd = false })
             }
         }
+    }
+
+    private var isCurrentMonth: Bool {
+        Calendar.current.isDate(selectedMonth, equalTo: .now, toGranularity: .month)
     }
 
     private func total(of items: [Expense]) -> Decimal {
@@ -110,12 +124,22 @@ private struct DayHeaderView: View {
 }
 
 private struct EmptyExpensesView: View {
+    let isCurrentMonth: Bool
+
     var body: some View {
-        ContentUnavailableView(
-            "No expenses yet",
-            systemImage: "tray",
-            description: Text("Tap the + button or use the “Add expense to ExpenseTracker” shortcut to get started.")
-        )
+        if isCurrentMonth {
+            ContentUnavailableView(
+                "No expenses yet",
+                systemImage: "tray",
+                description: Text("Tap the + button or use the “Add expense to ExpenseTracker” shortcut to get started.")
+            )
+        } else {
+            ContentUnavailableView(
+                "No expenses this month",
+                systemImage: "tray",
+                description: Text("Pick a different month to see other expenses.")
+            )
+        }
     }
 }
 

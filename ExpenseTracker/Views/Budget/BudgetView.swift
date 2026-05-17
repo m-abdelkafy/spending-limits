@@ -4,36 +4,32 @@ import SwiftData
 struct BudgetView: View {
     @Environment(\.modelContext) private var context
 
-    @Query private var expenses: [Expense]
-    @Query private var budgets: [Budget]
+    @Query(sort: [SortDescriptor(\Expense.date, order: .reverse)])
+    private var allExpenses: [Expense]
+
+    @Query private var allBudgets: [Budget]
 
     @State private var showEditor = false
     @State private var editingBudget: Budget?
+    @State private var selectedMonth: Date = Budget.normalize(month: .now)
 
-    private let referenceDate: Date = .now
+    private var monthInterval: DateInterval { MonthSummary.interval(of: selectedMonth) }
+    private var normalizedMonth: Date { Budget.normalize(month: selectedMonth) }
 
-    init() {
-        let interval = MonthSummary.interval(of: .now)
-        let start = interval.start
-        let end = interval.end
-        _expenses = Query(
-            filter: #Predicate<Expense> { $0.date >= start && $0.date < end },
-            sort: [SortDescriptor(\Expense.date, order: .reverse)]
-        )
-        let normalizedMonth = Budget.normalize(month: .now)
-        _budgets = Query(filter: #Predicate<Budget> { $0.month == normalizedMonth })
+    private var monthExpenses: [Expense] {
+        allExpenses.filter { monthInterval.contains($0.date) }
     }
-    private var monthInterval: DateInterval { MonthSummary.interval(of: referenceDate) }
-    private var currentMonth: Date { Budget.normalize(month: referenceDate) }
 
     private var monthBudgets: [Budget] {
-        budgets.sorted { ($0.category?.sortOrder ?? 0) < ($1.category?.sortOrder ?? 0) }
+        allBudgets
+            .filter { Budget.normalize(month: $0.month) == normalizedMonth }
+            .sorted { ($0.category?.sortOrder ?? 0) < ($1.category?.sortOrder ?? 0) }
     }
 
     private func spent(for category: Category?) -> Decimal {
         guard let category else { return 0 }
-        return expenses
-            .filter { $0.kind == .expense && monthInterval.contains($0.date) && $0.category?.id == category.id }
+        return monthExpenses
+            .filter { $0.kind == .expense && $0.category?.id == category.id }
             .reduce(Decimal(0)) { $0 + $1.amount }
     }
 
@@ -80,12 +76,15 @@ struct BudgetView: View {
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Budget")
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    MonthPickerView(month: $selectedMonth, allowFutureMonths: true)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     PrivacyToggleButton()
                 }
             }
             .sheet(isPresented: $showEditor) {
-                BudgetEditorView(editing: editingBudget, month: currentMonth)
+                BudgetEditorView(editing: editingBudget, month: normalizedMonth)
             }
         }
     }
@@ -127,7 +126,7 @@ struct BudgetView: View {
     }
 
     private var monthTitle: String {
-        referenceDate.formatted(.dateTime.month(.wide))
+        selectedMonth.formatted(.dateTime.month(.wide))
     }
 
     private var categoryList: some View {
