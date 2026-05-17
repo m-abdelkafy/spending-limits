@@ -121,6 +121,7 @@ private struct NewCategoryView: View {
     @State private var name: String = ""
     @State private var colorHex: String = CategoryPalette.colors.first ?? "#4F8EF7"
     @State private var icon: String = CategoryIconPalette.icons.first ?? "tag"
+    @State private var saveError: String?
 
     var body: some View {
         NavigationStack {
@@ -161,6 +162,11 @@ private struct NewCategoryView: View {
                     }
                     .padding(.vertical, 4)
                 }
+                if let saveError {
+                    Section {
+                        Text(saveError).foregroundStyle(.red)
+                    }
+                }
             }
             .navigationTitle("New Category")
             .navigationBarTitleDisplayMode(.inline)
@@ -188,9 +194,14 @@ private struct NewCategoryView: View {
             isDefault: false
         )
         context.insert(category)
-        try? context.save()
-        onCreated(category)
-        dismiss()
+        do {
+            try context.save()
+            onCreated(category)
+            dismiss()
+        } catch {
+            context.delete(category)
+            saveError = error.localizedDescription
+        }
     }
 }
 

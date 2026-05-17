@@ -4,22 +4,30 @@ import SwiftData
 struct BudgetView: View {
     @Environment(\.modelContext) private var context
 
-    @Query(sort: [SortDescriptor(\Expense.date, order: .reverse)])
-    private var expenses: [Expense]
-
+    @Query private var expenses: [Expense]
     @Query private var budgets: [Budget]
 
     @State private var showEditor = false
     @State private var editingBudget: Budget?
 
-    private var referenceDate: Date { .now }
+    private let referenceDate: Date = .now
+
+    init() {
+        let interval = MonthSummary.interval(of: .now)
+        let start = interval.start
+        let end = interval.end
+        _expenses = Query(
+            filter: #Predicate<Expense> { $0.date >= start && $0.date < end },
+            sort: [SortDescriptor(\Expense.date, order: .reverse)]
+        )
+        let normalizedMonth = Budget.normalize(month: .now)
+        _budgets = Query(filter: #Predicate<Budget> { $0.month == normalizedMonth })
+    }
     private var monthInterval: DateInterval { MonthSummary.interval(of: referenceDate) }
     private var currentMonth: Date { Budget.normalize(month: referenceDate) }
 
     private var monthBudgets: [Budget] {
-        budgets
-            .filter { Budget.normalize(month: $0.month) == currentMonth }
-            .sorted { ($0.category?.sortOrder ?? 0) < ($1.category?.sortOrder ?? 0) }
+        budgets.sorted { ($0.category?.sortOrder ?? 0) < ($1.category?.sortOrder ?? 0) }
     }
 
     private func spent(for category: Category?) -> Decimal {
@@ -138,7 +146,7 @@ struct BudgetView: View {
                     .swipeActions {
                         Button(role: .destructive) {
                             context.delete(budget)
-                            try? context.save()
+                            do { try context.save() } catch { /* delete already applied in-memory */ }
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }

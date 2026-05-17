@@ -126,8 +126,14 @@ struct BudgetEditorView: View {
             editing.limit = amount
             editing.category = category
         } else {
-            let budget = Budget(month: month, limit: amount, category: category)
-            context.insert(budget)
+            let normalizedMonth = Budget.normalize(month: month)
+            if let existing = allBudgets.first(where: {
+                Budget.normalize(month: $0.month) == normalizedMonth && $0.category?.id == category.id
+            }) {
+                existing.limit = amount
+            } else {
+                context.insert(Budget(month: month, limit: amount, category: category))
+            }
         }
 
         do {

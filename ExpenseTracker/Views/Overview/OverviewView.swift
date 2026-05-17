@@ -4,12 +4,24 @@ import SwiftData
 struct OverviewView: View {
     @Binding var selection: ContentView.Tab
 
-    @Query(sort: [SortDescriptor(\Expense.date, order: .reverse)])
-    private var expenses: [Expense]
-
+    @Query private var expenses: [Expense]
     @Query private var budgets: [Budget]
 
-    private var referenceDate: Date { .now }
+    private let referenceDate: Date = .now
+
+    init(selection: Binding<ContentView.Tab>) {
+        _selection = selection
+        let interval = MonthSummary.interval(of: .now)
+        let prevInterval = MonthSummary.previousInterval(of: .now)
+        let windowStart = prevInterval.start
+        let windowEnd = interval.end
+        _expenses = Query(
+            filter: #Predicate<Expense> { $0.date >= windowStart && $0.date < windowEnd },
+            sort: [SortDescriptor(\Expense.date, order: .reverse)]
+        )
+        let normalizedMonth = Budget.normalize(month: .now)
+        _budgets = Query(filter: #Predicate<Budget> { $0.month == normalizedMonth })
+    }
     private var calendar: Calendar { .current }
     private var monthInterval: DateInterval { MonthSummary.interval(of: referenceDate) }
     private var prevMonthInterval: DateInterval { MonthSummary.previousInterval(of: referenceDate) }
@@ -30,7 +42,7 @@ struct OverviewView: View {
 
     private var daysInMonth: Int { MonthSummary.daysInMonth(of: referenceDate) }
     private var dayOfMonth: Int { MonthSummary.dayOfMonth(referenceDate) }
-    private var daysLeft: Int { max(0, daysInMonth - dayOfMonth) }
+    private var daysLeft: Int { daysInMonth - dayOfMonth + 1 }
     private var remaining: Decimal { totalBudget - totalSpent }
 
     private var dailyTotals: [Decimal] {
@@ -184,18 +196,21 @@ struct OverviewView: View {
         return "Avg \(CurrencyFormatter.string(from: avg)) / day"
     }
 
+    @ViewBuilder
     private var comparisonBadge: some View {
         let spentDouble = NSDecimalNumber(decimal: totalSpent).doubleValue
         let prevDouble = NSDecimalNumber(decimal: prevMonthSpent).doubleValue
-        let delta = ((spentDouble - prevDouble) / prevDouble) * 100
-        let isDown = delta < 0
-        return HStack(spacing: 6) {
-            Text("\(isDown ? "↓" : "↑") \(Int(abs(delta)))%")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(isDown ? .green : .orange)
-            Text("vs last month")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
+        if prevDouble > 0 {
+            let delta = ((spentDouble - prevDouble) / prevDouble) * 100
+            let isDown = delta < 0
+            HStack(spacing: 6) {
+                Text("\(isDown ? "↓" : "↑") \(Int(abs(delta)))%")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(isDown ? .green : .orange)
+                Text("vs last month")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -292,13 +307,6 @@ struct OverviewView: View {
                 }
             }
         }
-    }
-}
-
-private struct ConditionalBlur: ViewModifier {
-    let active: Bool
-    func body(content: Content) -> some View {
-        if active { content.privacyBlur() } else { content }
     }
 }
 

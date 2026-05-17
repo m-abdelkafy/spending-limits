@@ -16,15 +16,3 @@ struct InsetCard<Content: View>: View {
     }
 }
 
-extension View {
-    func insetCardBackground(padding: EdgeInsets = EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)) -> some View {
-        self
-            .padding(padding)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color(.secondarySystemGroupedBackground))
-            )
-            .padding(.horizontal, 16)
-    }
-}
