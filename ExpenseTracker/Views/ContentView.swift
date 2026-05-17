@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var selection: Tab = .expenses
+    @State private var selection: Tab = .overview
 
     enum Tab: Hashable {
         case overview, expenses, budget, settings
@@ -9,27 +9,27 @@ struct ContentView: View {
 
     var body: some View {
         TabView(selection: $selection) {
-            OverviewView()
+            OverviewView(selection: $selection)
                 .tabItem {
-                    Label("Overview", systemImage: "chart.pie.fill")
+                    Label("Overview", systemImage: "chart.pie")
                 }
                 .tag(Tab.overview)
 
             ExpenseListView()
                 .tabItem {
-                    Label("Expenses", systemImage: "list.bullet.rectangle")
+                    Label("Expenses", systemImage: "list.bullet")
                 }
                 .tag(Tab.expenses)
 
             BudgetView()
                 .tabItem {
-                    Label("Budget", systemImage: "chart.bar.fill")
+                    Label("Budget", systemImage: "chart.bar")
                 }
                 .tag(Tab.budget)
 
             SettingsView()
                 .tabItem {
-                    Label("Settings", systemImage: "gearshape.fill")
+                    Label("Settings", systemImage: "gearshape")
                 }
                 .tag(Tab.settings)
         }
@@ -38,5 +38,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: [Expense.self, Category.self, Account.self, Tag.self], inMemory: true)
+        .modelContainer(for: [Expense.self, Category.self, Account.self, Tag.self, Budget.self], inMemory: true)
 }

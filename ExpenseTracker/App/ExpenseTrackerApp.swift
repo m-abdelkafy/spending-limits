@@ -7,7 +7,9 @@ struct ExpenseTrackerApp: App {
         WindowGroup {
             ContentView()
                 .task {
-                    SeedData.seedIfNeeded(SharedModelContainer.shared.mainContext)
+                    let ctx = SharedModelContainer.shared.mainContext
+                    SeedData.seedIfNeeded(ctx)
+                    SeedData.migrateIsDefaultIfNeeded(ctx)
                 }
         }
         .modelContainer(SharedModelContainer.shared)

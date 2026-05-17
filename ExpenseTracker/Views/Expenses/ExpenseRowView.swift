@@ -8,18 +8,20 @@ struct ExpenseRowView: View {
             leadingIcon
             VStack(alignment: .leading, spacing: 2) {
                 Text(primaryLabel)
-                    .font(.body.weight(.medium))
+                    .font(.system(size: 15, weight: .medium))
                 HStack(spacing: 6) {
                     accountLabel
-                    if !expense.tags.isEmpty {
-                        Text(expense.tags.map { "#\($0.name)" }.joined(separator: " "))
+                    if let note = expense.note, !note.isEmpty {
+                        Text("·")
+                            .foregroundStyle(.tertiary)
+                        Text(note)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
                 }
-                if let note = expense.note, !note.isEmpty {
-                    Text(note)
+                if !expense.tags.isEmpty {
+                    Text(expense.tags.map { "#\($0.name)" }.joined(separator: " "))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -27,7 +29,7 @@ struct ExpenseRowView: View {
             }
             Spacer(minLength: 8)
             Text(amountText)
-                .font(.body.weight(.semibold))
+                .font(.system(size: 15, weight: .semibold))
                 .monospacedDigit()
                 .foregroundStyle(amountColor)
                 .privacyBlur()
@@ -39,7 +41,7 @@ struct ExpenseRowView: View {
     private var leadingIcon: some View {
         switch expense.kind {
         case .expense:
-            CategoryIcon(category: expense.category)
+            CategoryTile(category: expense.category, size: 36)
         case .income:
             KindBadge(systemName: TransactionKind.income.icon, tint: .green)
         case .transfer:
@@ -98,18 +100,10 @@ struct ExpenseRowView: View {
 
 struct CategoryIcon: View {
     let category: Category?
+    var size: CGFloat = 36
 
     var body: some View {
-        let color = Color(hex: category?.colorHex ?? "#8E8E93")
-        ZStack {
-            Circle()
-                .fill(color.opacity(0.18))
-            Image(systemName: category?.icon ?? "questionmark")
-                .foregroundStyle(color)
-                .font(.system(size: 16, weight: .semibold))
-        }
-        .frame(width: 36, height: 36)
-        .accessibilityHidden(true)
+        CategoryTile(category: category, size: size)
     }
 }
 
@@ -119,11 +113,11 @@ private struct KindBadge: View {
 
     var body: some View {
         ZStack {
-            Circle()
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(tint.opacity(0.18))
             Image(systemName: systemName)
                 .foregroundStyle(tint)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(size: 18, weight: .semibold))
         }
         .frame(width: 36, height: 36)
         .accessibilityHidden(true)

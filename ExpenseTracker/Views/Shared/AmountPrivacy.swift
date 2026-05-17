@@ -16,6 +16,13 @@ extension View {
     }
 }
 
+struct ConditionalBlur: ViewModifier {
+    let active: Bool
+    func body(content: Content) -> some View {
+        if active { content.privacyBlur() } else { content }
+    }
+}
+
 struct PrivacyToggleButton: View {
     @AppStorage("hideAmounts") private var hideAmounts: Bool = false
 

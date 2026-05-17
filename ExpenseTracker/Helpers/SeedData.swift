@@ -24,6 +24,19 @@ enum SeedData {
     ]
 
     @MainActor
+    static func migrateIsDefaultIfNeeded(_ context: ModelContext) {
+        let defaultNames = Set(categories.map { $0.name })
+        let fetch = FetchDescriptor<Category>(predicate: #Predicate { !$0.isDefault })
+        guard let candidates = try? context.fetch(fetch) else { return }
+        var changed = false
+        for cat in candidates where defaultNames.contains(cat.name) {
+            cat.isDefault = true
+            changed = true
+        }
+        if changed { try? context.save() }
+    }
+
+    @MainActor
     static func seedIfNeeded(_ context: ModelContext) {
         let categoryFetch = FetchDescriptor<Category>()
         let existingCategories = (try? context.fetchCount(categoryFetch)) ?? 0
@@ -33,7 +46,8 @@ enum SeedData {
                     name: def.name,
                     icon: def.icon,
                     colorHex: def.colorHex,
-                    sortOrder: index
+                    sortOrder: index,
+                    isDefault: true
                 )
                 context.insert(cat)
             }

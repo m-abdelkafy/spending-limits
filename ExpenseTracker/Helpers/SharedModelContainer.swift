@@ -7,6 +7,7 @@ enum SharedModelContainer {
         Category.self,
         Account.self,
         Tag.self,
+        Budget.self,
     ])
 
     static let shared: ModelContainer = {

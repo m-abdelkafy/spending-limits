@@ -88,15 +88,24 @@ private struct DayHeaderView: View {
 
     var body: some View {
         HStack {
-            Text(day, format: .dateTime.weekday(.abbreviated).month(.abbreviated).day())
-                .font(.subheadline.weight(.semibold))
+            Text(dayLabel)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
             Spacer()
             Text(CurrencyFormatter.string(from: total))
-                .font(.subheadline.weight(.semibold))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
                 .monospacedDigit()
                 .privacyBlur()
         }
         .textCase(nil)
+    }
+
+    private var dayLabel: String {
+        let cal = Calendar.current
+        if cal.isDateInToday(day) { return "Today" }
+        if cal.isDateInYesterday(day) { return "Yesterday" }
+        return day.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
     }
 }
 
