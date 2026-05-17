@@ -4,64 +4,84 @@ import SwiftData
 struct OverviewView: View {
     @Binding var selection: ContentView.Tab
 
-    @Query private var expenses: [Expense]
-    @Query private var budgets: [Budget]
+    @Query(sort: [SortDescriptor(\Expense.date, order: .reverse)])
+    private var allExpenses: [Expense]
 
-    private let referenceDate: Date = .now
+    @Query private var allBudgets: [Budget]
+
+    @State private var range: DateRange = .currentMonth()
 
     init(selection: Binding<ContentView.Tab>) {
         _selection = selection
-        let interval = MonthSummary.interval(of: .now)
-        let prevInterval = MonthSummary.previousInterval(of: .now)
-        let windowStart = prevInterval.start
-        let windowEnd = interval.end
-        _expenses = Query(
-            filter: #Predicate<Expense> { $0.date >= windowStart && $0.date < windowEnd },
-            sort: [SortDescriptor(\Expense.date, order: .reverse)]
-        )
-        let normalizedMonth = Budget.normalize(month: .now)
-        _budgets = Query(filter: #Predicate<Budget> { $0.month == normalizedMonth })
     }
+
     private var calendar: Calendar { .current }
-    private var monthInterval: DateInterval { MonthSummary.interval(of: referenceDate) }
-    private var prevMonthInterval: DateInterval { MonthSummary.previousInterval(of: referenceDate) }
+    private var rangeInterval: DateInterval { range.interval() }
+    private var previousInterval: DateInterval { range.previousInterval() }
+
+    private var rangeExpenses: [Expense] {
+        allExpenses.filter { rangeInterval.contains($0.date) }
+    }
 
     private var totalSpent: Decimal {
-        MonthSummary.total(expenses, in: monthInterval, kind: .expense)
+        MonthSummary.total(allExpenses, in: rangeInterval, kind: .expense)
     }
 
-    private var prevMonthSpent: Decimal {
-        MonthSummary.total(expenses, in: prevMonthInterval, kind: .expense)
+    private var previousSpent: Decimal {
+        MonthSummary.total(allExpenses, in: previousInterval, kind: .expense)
     }
 
     private var totalBudget: Decimal {
-        let currentMonth = Budget.normalize(month: referenceDate)
-        return budgets.filter { Budget.normalize(month: $0.month) == currentMonth }
-            .reduce(Decimal(0)) { $0 + $1.limit }
+        switch range.scope {
+        case .month:
+            let normalized = Budget.normalize(month: range.anchor)
+            return allBudgets
+                .filter { Budget.normalize(month: $0.month) == normalized }
+                .reduce(Decimal(0)) { $0 + $1.limit }
+        case .year:
+            let year = calendar.component(.year, from: range.anchor)
+            return allBudgets
+                .filter { calendar.component(.year, from: $0.month) == year }
+                .reduce(Decimal(0)) { $0 + $1.limit }
+        }
     }
 
-    private var daysInMonth: Int { MonthSummary.daysInMonth(of: referenceDate) }
-    private var dayOfMonth: Int { MonthSummary.dayOfMonth(referenceDate) }
-    private var daysLeft: Int { daysInMonth - dayOfMonth + 1 }
     private var remaining: Decimal { totalBudget - totalSpent }
 
+    private var isCurrentRange: Bool { range.isCurrent() }
+
     private var dailyTotals: [Decimal] {
-        MonthSummary.dailyTotals(expenses, in: monthInterval)
+        MonthSummary.dailyTotals(allExpenses, in: rangeInterval)
+    }
+
+    private var monthlyTotals: [Decimal] {
+        MonthSummary.monthlyTotals(allExpenses, in: rangeInterval)
     }
 
     private var categoryTotals: [MonthSummary.CategoryTotal] {
-        MonthSummary.byCategory(expenses, in: monthInterval)
+        MonthSummary.byCategory(allExpenses, in: rangeInterval)
+    }
+
+    private var daysInMonth: Int { MonthSummary.daysInMonth(of: range.anchor) }
+    private var dayOfMonth: Int { MonthSummary.dayOfMonth(.now) }
+    private var daysLeft: Int { max(daysInMonth - dayOfMonth + 1, 0) }
+    private var currentMonthIndexInYear: Int? {
+        guard range.scope == .year, isCurrentRange else { return nil }
+        return calendar.component(.month, from: .now) - 1
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 0) {
-                    heroBurnDownCard
-                        .padding(.top, 14)
+                    rangePickerBar
+                        .padding(.top, 8)
 
-                    SectionHeader(monthTitle + " · daily spend")
-                    heatmapCard
+                    heroCard
+                        .padding(.top, 8)
+
+                    SectionHeader(secondaryHeaderTitle)
+                    secondaryChartCard
 
                     SectionHeader("Categories")
                     categoriesCard
@@ -88,21 +108,24 @@ struct OverviewView: View {
         }
     }
 
-    private var monthTitle: String {
-        referenceDate.formatted(.dateTime.month(.wide))
+    private var rangePickerBar: some View {
+        RangePickerView(range: $range)
+            .padding(.horizontal, 16)
     }
 
-    private var heroBurnDownCard: some View {
+    private var heroCard: some View {
         InsetCard(padding: EdgeInsets(top: 18, leading: 18, bottom: 16, trailing: 18)) {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text("\(monthTitle) · spent")
+                    Text("\(range.title()) · spent")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Text("\(dayOfMonth)/\(daysInMonth) days")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.tertiary)
+                    if let progressLabel {
+                        Text(progressLabel)
+                            .font(.system(size: 12))
+                            .foregroundStyle(.tertiary)
+                    }
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
@@ -122,18 +145,62 @@ struct OverviewView: View {
                     ProgressBarView(
                         progress: progressValue,
                         height: .thick,
-                        marker: totalBudget > 0 ? Double(dayOfMonth) / Double(daysInMonth) : nil
+                        marker: progressMarker
                     )
                 }
 
-                HStack(alignment: .top) {
-                    metric(label: "Remaining", value: remainingText, alignment: .leading)
-                    Spacer()
-                    metric(label: "Days left", value: "\(daysLeft)", alignment: .center, blurValue: false)
-                    Spacer()
-                    metric(label: "Daily budget", value: dailyBudgetText, alignment: .trailing)
-                }
+                heroMetricsRow
             }
+        }
+    }
+
+    @ViewBuilder
+    private var heroMetricsRow: some View {
+        switch range.scope {
+        case .month where isCurrentRange:
+            HStack(alignment: .top) {
+                metric(label: "Remaining", value: remainingText, alignment: .leading)
+                Spacer()
+                metric(label: "Days left", value: "\(daysLeft)", alignment: .center, blurValue: false)
+                Spacer()
+                metric(label: "Daily budget", value: dailyBudgetText, alignment: .trailing)
+            }
+        case .month:
+            HStack(alignment: .top) {
+                metric(label: "Remaining", value: remainingText, alignment: .leading)
+                Spacer()
+                metric(label: "Avg / day", value: monthlyAvgPerDayText, alignment: .trailing)
+            }
+        case .year:
+            HStack(alignment: .top) {
+                metric(label: "Remaining", value: remainingText, alignment: .leading)
+                Spacer()
+                metric(label: "Avg / month", value: yearlyAvgPerMonthText, alignment: .trailing)
+            }
+        }
+    }
+
+    private var progressLabel: String? {
+        switch range.scope {
+        case .month where isCurrentRange:
+            return "\(dayOfMonth)/\(daysInMonth) days"
+        case .month:
+            return "\(daysInMonth) days"
+        case .year where isCurrentRange:
+            return "Month \(calendar.component(.month, from: .now))/12"
+        case .year:
+            return "Full year"
+        }
+    }
+
+    private var progressMarker: Double? {
+        guard totalBudget > 0, isCurrentRange else { return nil }
+        switch range.scope {
+        case .month:
+            return Double(dayOfMonth) / Double(daysInMonth)
+        case .year:
+            let monthNow = calendar.component(.month, from: .now)
+            return Double(monthNow - 1) / 12.0
         }
     }
 
@@ -154,6 +221,21 @@ struct OverviewView: View {
         return CurrencyFormatter.string(from: perDay)
     }
 
+    private var monthlyAvgPerDayText: String {
+        let divisor = Decimal(max(daysInMonth, 1))
+        return CurrencyFormatter.string(from: totalSpent / divisor)
+    }
+
+    private var yearlyAvgPerMonthText: String {
+        let monthsElapsed: Int
+        if isCurrentRange {
+            monthsElapsed = max(calendar.component(.month, from: .now), 1)
+        } else {
+            monthsElapsed = 12
+        }
+        return CurrencyFormatter.string(from: totalSpent / Decimal(monthsElapsed))
+    }
+
     private func metric(label: String, value: String, alignment: HorizontalAlignment, blurValue: Bool = true) -> some View {
         VStack(alignment: alignment, spacing: 2) {
             Text(label.uppercased())
@@ -167,21 +249,38 @@ struct OverviewView: View {
         }
     }
 
-    private var heatmapCard: some View {
+    private var secondaryHeaderTitle: String {
+        switch range.scope {
+        case .month: "\(range.title()) · daily spend"
+        case .year: "\(range.title()) · monthly spend"
+        }
+    }
+
+    @ViewBuilder
+    private var secondaryChartCard: some View {
         InsetCard {
             VStack(alignment: .leading, spacing: 12) {
-                DailyHeatmapView(
-                    dailyTotals: dailyTotals,
-                    firstWeekdayOffset: MonthSummary.firstWeekdayOffset(of: monthInterval),
-                    todayIndex: dayOfMonth - 1
-                )
+                switch range.scope {
+                case .month:
+                    DailyHeatmapView(
+                        dailyTotals: dailyTotals,
+                        firstWeekdayOffset: MonthSummary.firstWeekdayOffset(of: rangeInterval),
+                        todayIndex: isCurrentRange ? (dayOfMonth - 1) : nil
+                    )
+                case .year:
+                    MonthlyBarsView(
+                        monthlyTotals: monthlyTotals,
+                        currentMonthIndex: currentMonthIndexInYear
+                    )
+                }
+
                 HStack {
                     Text(averageLine)
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                         .privacyBlur()
                     Spacer()
-                    if prevMonthSpent > 0 {
+                    if previousSpent > 0 {
                         comparisonBadge
                     }
                 }
@@ -190,16 +289,26 @@ struct OverviewView: View {
     }
 
     private var averageLine: String {
-        let nonZeroDays = dailyTotals.prefix(dayOfMonth).filter { $0 > 0 }
-        let divisor = Decimal(max(nonZeroDays.count, 1))
-        let avg = nonZeroDays.reduce(Decimal(0), +) / divisor
-        return "Avg \(CurrencyFormatter.string(from: avg)) / day"
+        switch range.scope {
+        case .month:
+            let upper = isCurrentRange ? dayOfMonth : dailyTotals.count
+            let nonZeroDays = dailyTotals.prefix(upper).filter { $0 > 0 }
+            let divisor = Decimal(max(nonZeroDays.count, 1))
+            let avg = nonZeroDays.reduce(Decimal(0), +) / divisor
+            return "Avg \(CurrencyFormatter.string(from: avg)) / day"
+        case .year:
+            let upper = isCurrentRange ? calendar.component(.month, from: .now) : 12
+            let nonZeroMonths = monthlyTotals.prefix(upper).filter { $0 > 0 }
+            let divisor = Decimal(max(nonZeroMonths.count, 1))
+            let avg = nonZeroMonths.reduce(Decimal(0), +) / divisor
+            return "Avg \(CurrencyFormatter.string(from: avg)) / month"
+        }
     }
 
     @ViewBuilder
     private var comparisonBadge: some View {
         let spentDouble = NSDecimalNumber(decimal: totalSpent).doubleValue
-        let prevDouble = NSDecimalNumber(decimal: prevMonthSpent).doubleValue
+        let prevDouble = NSDecimalNumber(decimal: previousSpent).doubleValue
         if prevDouble > 0 {
             let delta = ((spentDouble - prevDouble) / prevDouble) * 100
             let isDown = delta < 0
@@ -207,10 +316,17 @@ struct OverviewView: View {
                 Text("\(isDown ? "↓" : "↑") \(Int(abs(delta)))%")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(isDown ? .green : .orange)
-                Text("vs last month")
+                Text(comparisonSuffix)
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
+        }
+    }
+
+    private var comparisonSuffix: String {
+        switch range.scope {
+        case .month: "vs previous month"
+        case .year: "vs previous year"
         }
     }
 
@@ -218,7 +334,7 @@ struct OverviewView: View {
     private var categoriesCard: some View {
         InsetCard(padding: EdgeInsets(top: 16, leading: 16, bottom: 12, trailing: 16)) {
             if categoryTotals.isEmpty {
-                Text("No spending this month yet.")
+                Text(emptyCategoriesText)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -257,6 +373,13 @@ struct OverviewView: View {
         }
     }
 
+    private var emptyCategoriesText: String {
+        switch range.scope {
+        case .month: "No spending this month yet."
+        case .year: "No spending this year yet."
+        }
+    }
+
     private var donutCenter: some View {
         let total = categoryTotals.reduce(Decimal(0)) { $0 + $1.amount }
         return VStack(spacing: 2) {
@@ -287,9 +410,9 @@ struct OverviewView: View {
 
     private var recentCard: some View {
         InsetCard(padding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)) {
-            let recent = Array(expenses.prefix(3))
+            let recent = Array(rangeExpenses.prefix(3))
             if recent.isEmpty {
-                Text("No transactions yet.")
+                Text("No transactions in this range.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .center)

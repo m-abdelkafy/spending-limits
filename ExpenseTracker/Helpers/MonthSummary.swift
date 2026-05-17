@@ -85,4 +85,33 @@ enum MonthSummary {
         let weekday = calendar.component(.weekday, from: interval.start)
         return (weekday - calendar.firstWeekday + 7) % 7
     }
+
+    static func yearInterval(of date: Date, calendar: Calendar = .current) -> DateInterval {
+        let components = calendar.dateComponents([.year], from: date)
+        let start = calendar.date(from: components) ?? date
+        let end = calendar.date(byAdding: .year, value: 1, to: start) ?? date
+        return DateInterval(start: start, end: end)
+    }
+
+    static func previousYearInterval(of date: Date, calendar: Calendar = .current) -> DateInterval {
+        let current = yearInterval(of: date, calendar: calendar)
+        let start = calendar.date(byAdding: .year, value: -1, to: current.start) ?? current.start
+        return DateInterval(start: start, end: current.start)
+    }
+
+    static func monthlyTotals(
+        _ expenses: [Expense],
+        in yearInterval: DateInterval,
+        calendar: Calendar = .current
+    ) -> [Decimal] {
+        var totals = Array(repeating: Decimal(0), count: 12)
+        let start = yearInterval.start
+        for expense in expenses where expense.kind == .expense && yearInterval.contains(expense.date) {
+            let monthIndex = calendar.dateComponents([.month], from: start, to: expense.date).month ?? 0
+            if monthIndex >= 0 && monthIndex < 12 {
+                totals[monthIndex] += expense.amount
+            }
+        }
+        return totals
+    }
 }

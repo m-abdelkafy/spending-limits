@@ -13,6 +13,7 @@
 		7C927019CFCFDFF436D1977E /* CurrencyFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD82944065480D52C0D2E6D1 /* CurrencyFormatter.swift */; };
 		588ED3AB92F49C439BF853E2 /* DataExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAF78EAF728FE3E122EA6B7 /* DataExporter.swift */; };
 		E1BBA427A94540994BB37207 /* DataImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ED2DE5C30F9F67CCF87B534 /* DataImporter.swift */; };
+		F3C95D3FCFA079D6881B9653 /* DateRange.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA498E1004C8CFDF0E3D7A61 /* DateRange.swift */; };
 		A70CD26356B434B5C2613522 /* MonthSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAB07AF5CD51B38B940A32EA /* MonthSummary.swift */; };
 		7103CD24A810E46A7D8348C7 /* SeedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9FBAE1ADE2B519A1AB515E5 /* SeedData.swift */; };
 		9177C65BFACE0D30BE79BFC4 /* SharedModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 424C59D90C06273B9A00C3F1 /* SharedModelContainer.swift */; };
@@ -47,7 +48,9 @@
 		77ABC5EC3515742DA643F33C /* DonutChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 729AB98EB3FDC8E55DFA78BB /* DonutChart.swift */; };
 		D54307388ED45925392AD6A8 /* InsetCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CD981D199D7109903743135 /* InsetCard.swift */; };
 		37277D5B31E8A208692D3087 /* MonthPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F30E8873E2EF9D013609700A /* MonthPickerView.swift */; };
+		3D9E9ECFA37CE928A5980C8A /* MonthlyBarsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21E621BF49E3468F891A311B /* MonthlyBarsView.swift */; };
 		597AF11ED015A88FADF51593 /* ProgressBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FB42913BBE8645F4706D592 /* ProgressBarView.swift */; };
+		A33C25F152CCCDC92A9EB6D0 /* RangePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FBEA9DDC8BCD8D64D7EBDB6 /* RangePickerView.swift */; };
 		766241E9B9E81AE9AFBB2836 /* SectionHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43D40E84349C8C95546578DB /* SectionHeader.swift */; };
 		7D861EC6A833DBFF5327AD29 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B652EEB409BBB84D5E16BC52 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
@@ -59,6 +62,7 @@
 		AD82944065480D52C0D2E6D1 /* CurrencyFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CurrencyFormatter.swift"; sourceTree = "<group>"; };
 		BDAF78EAF728FE3E122EA6B7 /* DataExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataExporter.swift"; sourceTree = "<group>"; };
 		8ED2DE5C30F9F67CCF87B534 /* DataImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataImporter.swift"; sourceTree = "<group>"; };
+		BA498E1004C8CFDF0E3D7A61 /* DateRange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DateRange.swift"; sourceTree = "<group>"; };
 		CAB07AF5CD51B38B940A32EA /* MonthSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MonthSummary.swift"; sourceTree = "<group>"; };
 		F9FBAE1ADE2B519A1AB515E5 /* SeedData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SeedData.swift"; sourceTree = "<group>"; };
 		424C59D90C06273B9A00C3F1 /* SharedModelContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SharedModelContainer.swift"; sourceTree = "<group>"; };
@@ -93,7 +97,9 @@
 		729AB98EB3FDC8E55DFA78BB /* DonutChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DonutChart.swift"; sourceTree = "<group>"; };
 		8CD981D199D7109903743135 /* InsetCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InsetCard.swift"; sourceTree = "<group>"; };
 		F30E8873E2EF9D013609700A /* MonthPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MonthPickerView.swift"; sourceTree = "<group>"; };
+		21E621BF49E3468F891A311B /* MonthlyBarsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MonthlyBarsView.swift"; sourceTree = "<group>"; };
 		7FB42913BBE8645F4706D592 /* ProgressBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProgressBarView.swift"; sourceTree = "<group>"; };
+		9FBEA9DDC8BCD8D64D7EBDB6 /* RangePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RangePickerView.swift"; sourceTree = "<group>"; };
 		43D40E84349C8C95546578DB /* SectionHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SectionHeader.swift"; sourceTree = "<group>"; };
 		B83783DA4862BE6F7E1AD9D7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info.plist"; sourceTree = "<group>"; };
 		B652EEB409BBB84D5E16BC52 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
@@ -127,6 +133,7 @@
 				AD82944065480D52C0D2E6D1 /* CurrencyFormatter.swift */,
 				BDAF78EAF728FE3E122EA6B7 /* DataExporter.swift */,
 				8ED2DE5C30F9F67CCF87B534 /* DataImporter.swift */,
+				BA498E1004C8CFDF0E3D7A61 /* DateRange.swift */,
 				CAB07AF5CD51B38B940A32EA /* MonthSummary.swift */,
 				F9FBAE1ADE2B519A1AB515E5 /* SeedData.swift */,
 				424C59D90C06273B9A00C3F1 /* SharedModelContainer.swift */,
@@ -224,7 +231,9 @@
 				729AB98EB3FDC8E55DFA78BB /* DonutChart.swift */,
 				8CD981D199D7109903743135 /* InsetCard.swift */,
 				F30E8873E2EF9D013609700A /* MonthPickerView.swift */,
+				21E621BF49E3468F891A311B /* MonthlyBarsView.swift */,
 				7FB42913BBE8645F4706D592 /* ProgressBarView.swift */,
+				9FBEA9DDC8BCD8D64D7EBDB6 /* RangePickerView.swift */,
 				43D40E84349C8C95546578DB /* SectionHeader.swift */,
 			);
 			path = "Shared";
@@ -349,6 +358,7 @@
 				7C927019CFCFDFF436D1977E /* CurrencyFormatter.swift in Sources */,
 				588ED3AB92F49C439BF853E2 /* DataExporter.swift in Sources */,
 				E1BBA427A94540994BB37207 /* DataImporter.swift in Sources */,
+				F3C95D3FCFA079D6881B9653 /* DateRange.swift in Sources */,
 				A70CD26356B434B5C2613522 /* MonthSummary.swift in Sources */,
 				7103CD24A810E46A7D8348C7 /* SeedData.swift in Sources */,
 				9177C65BFACE0D30BE79BFC4 /* SharedModelContainer.swift in Sources */,
@@ -383,7 +393,9 @@
 				77ABC5EC3515742DA643F33C /* DonutChart.swift in Sources */,
 				D54307388ED45925392AD6A8 /* InsetCard.swift in Sources */,
 				37277D5B31E8A208692D3087 /* MonthPickerView.swift in Sources */,
+				3D9E9ECFA37CE928A5980C8A /* MonthlyBarsView.swift in Sources */,
 				597AF11ED015A88FADF51593 /* ProgressBarView.swift in Sources */,
+				A33C25F152CCCDC92A9EB6D0 /* RangePickerView.swift in Sources */,
 				766241E9B9E81AE9AFBB2836 /* SectionHeader.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
