@@ -7,7 +7,8 @@ struct DataExporter {
         accounts: [Account],
         categories: [Category],
         tags: [Tag],
-        expenses: [Expense]
+        expenses: [Expense],
+        spendingLimits: [SpendingLimit]
     ) throws -> [URL] {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("ExpenseTrackerExport_\(datestamp())", isDirectory: true)
@@ -18,6 +19,7 @@ struct DataExporter {
             ("ExpenseTracker_categories_\(datestamp()).csv", categoriesCSV(categories)),
             ("ExpenseTracker_tags_\(datestamp()).csv", tagsCSV(tags)),
             ("ExpenseTracker_expenses_\(datestamp()).csv", expensesCSV(expenses)),
+            ("ExpenseTracker_spending_limits_\(datestamp()).csv", spendingLimitsCSV(spendingLimits)),
         ]
 
         return try files.map { name, content in
@@ -72,6 +74,18 @@ struct DataExporter {
         var rows = ["id,name"]
         for t in tags {
             rows.append([t.id.uuidString, t.name].map(csvEscape).joined(separator: ","))
+        }
+        return rows.joined(separator: "\n")
+    }
+
+    private func spendingLimitsCSV(_ limits: [SpendingLimit]) -> String {
+        var rows = ["id,month,amount"]
+        for l in limits {
+            rows.append([
+                l.id.uuidString,
+                iso8601.string(from: l.month),
+                "\(l.amount)",
+            ].map(csvEscape).joined(separator: ","))
         }
         return rows.joined(separator: "\n")
     }

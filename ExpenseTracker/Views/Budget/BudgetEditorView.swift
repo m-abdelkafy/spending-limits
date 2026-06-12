@@ -24,9 +24,7 @@ struct BudgetEditorView: View {
     }
 
     private var amountDecimal: Decimal? {
-        let trimmed = limitString.replacingOccurrences(of: ",", with: ".")
-        guard !trimmed.isEmpty else { return nil }
-        return Decimal(string: trimmed)
+        DecimalInput.parse(limitString)
     }
 
     private var canSave: Bool {

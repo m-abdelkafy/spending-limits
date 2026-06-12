@@ -11,6 +11,7 @@
 		46B8C842433208BCCD6F6BC8 /* CSVParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99AA42C7AE5475C2DBA15397 /* CSVParser.swift */; };
 		C6993B5D97EB85AB61196D0D /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = C51EA1A76D7156711A2BF6A9 /* Color+Hex.swift */; };
 		7C927019CFCFDFF436D1977E /* CurrencyFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD82944065480D52C0D2E6D1 /* CurrencyFormatter.swift */; };
+		0FEEE75C05220B5305C66C44 /* DecimalInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6165FDC99A9834077CE2C89 /* DecimalInput.swift */; };
 		588ED3AB92F49C439BF853E2 /* DataExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAF78EAF728FE3E122EA6B7 /* DataExporter.swift */; };
 		E1BBA427A94540994BB37207 /* DataImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ED2DE5C30F9F67CCF87B534 /* DataImporter.swift */; };
 		F3C95D3FCFA079D6881B9653 /* DateRange.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA498E1004C8CFDF0E3D7A61 /* DateRange.swift */; };
@@ -62,6 +63,7 @@
 		99AA42C7AE5475C2DBA15397 /* CSVParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CSVParser.swift"; sourceTree = "<group>"; };
 		C51EA1A76D7156711A2BF6A9 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 		AD82944065480D52C0D2E6D1 /* CurrencyFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CurrencyFormatter.swift"; sourceTree = "<group>"; };
+		B6165FDC99A9834077CE2C89 /* DecimalInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DecimalInput.swift"; sourceTree = "<group>"; };
 		BDAF78EAF728FE3E122EA6B7 /* DataExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataExporter.swift"; sourceTree = "<group>"; };
 		8ED2DE5C30F9F67CCF87B534 /* DataImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataImporter.swift"; sourceTree = "<group>"; };
 		BA498E1004C8CFDF0E3D7A61 /* DateRange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DateRange.swift"; sourceTree = "<group>"; };
@@ -138,6 +140,7 @@
 				BDAF78EAF728FE3E122EA6B7 /* DataExporter.swift */,
 				8ED2DE5C30F9F67CCF87B534 /* DataImporter.swift */,
 				BA498E1004C8CFDF0E3D7A61 /* DateRange.swift */,
+				B6165FDC99A9834077CE2C89 /* DecimalInput.swift */,
 				CAB07AF5CD51B38B940A32EA /* MonthSummary.swift */,
 				F9FBAE1ADE2B519A1AB515E5 /* SeedData.swift */,
 				424C59D90C06273B9A00C3F1 /* SharedModelContainer.swift */,
@@ -362,6 +365,7 @@
 				46B8C842433208BCCD6F6BC8 /* CSVParser.swift in Sources */,
 				C6993B5D97EB85AB61196D0D /* Color+Hex.swift in Sources */,
 				7C927019CFCFDFF436D1977E /* CurrencyFormatter.swift in Sources */,
+				0FEEE75C05220B5305C66C44 /* DecimalInput.swift in Sources */,
 				588ED3AB92F49C439BF853E2 /* DataExporter.swift in Sources */,
 				E1BBA427A94540994BB37207 /* DataImporter.swift in Sources */,
 				F3C95D3FCFA079D6881B9653 /* DateRange.swift in Sources */,

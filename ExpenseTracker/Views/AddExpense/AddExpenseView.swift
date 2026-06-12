@@ -34,9 +34,7 @@ struct AddExpenseView: View {
     }
 
     private var amountDecimal: Decimal? {
-        let trimmed = amountString.replacingOccurrences(of: ",", with: ".")
-        guard !trimmed.isEmpty else { return nil }
-        return Decimal(string: trimmed)
+        DecimalInput.parse(amountString)
     }
 
     private var availableKinds: [TransactionKind] {

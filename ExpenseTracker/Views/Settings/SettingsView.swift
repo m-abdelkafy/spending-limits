@@ -10,8 +10,7 @@ struct SettingsView: View {
     @Query private var spendingLimits: [SpendingLimit]
 
     private var currentLimit: SpendingLimit? {
-        let month = Budget.normalize(month: .now)
-        return spendingLimits.first { Budget.normalize(month: $0.month) == month }
+        SpendingLimit.limit(for: .now, in: spendingLimits)
     }
 
     var body: some View {

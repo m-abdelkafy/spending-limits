@@ -14,23 +14,22 @@ struct SpendingLimitView: View {
     @State private var error: String?
 
     private var amountDecimal: Decimal? {
-        let trimmed = amountString.replacingOccurrences(of: ",", with: ".")
-        guard !trimmed.isEmpty else { return nil }
-        return Decimal(string: trimmed)
+        DecimalInput.parse(amountString)
     }
 
     private var budgetTotal: Decimal {
         allBudgets
-            .filter { Budget.normalize(month: $0.month) == month }
+            .filter { $0.month == month }
             .reduce(Decimal(0)) { $0 + $1.limit }
     }
 
     private var existingLimit: SpendingLimit? {
-        limits.first { Budget.normalize(month: $0.month) == month }
+        SpendingLimit.limit(for: month, in: limits)
     }
 
     private var canSave: Bool {
-        (amountDecimal ?? 0) > 0
+        guard let amount = amountDecimal else { return false }
+        return amount > 0 && amount > budgetTotal
     }
 
     var body: some View {
@@ -77,7 +76,7 @@ struct SpendingLimitView: View {
     }
 
     private var monthTitle: String {
-        Date.now.formatted(.dateTime.month(.wide))
+        month.formatted(.dateTime.month(.wide))
     }
 
     private func load() {
