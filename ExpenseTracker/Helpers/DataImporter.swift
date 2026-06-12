@@ -6,9 +6,10 @@ struct ImportResult {
     var categoriesCount = 0
     var tagsCount = 0
     var expensesCount = 0
+    var spendingLimitsCount = 0
 
     var summary: String {
-        "\(expensesCount) expenses, \(categoriesCount) categories, \(accountsCount) accounts, \(tagsCount) tags"
+        "\(expensesCount) expenses, \(categoriesCount) categories, \(accountsCount) accounts, \(tagsCount) tags, \(spendingLimitsCount) spending limits"
     }
 }
 
@@ -22,10 +23,14 @@ struct DataImporter {
         var categoriesURL: URL?
         var tagsURL: URL?
         var expensesURL: URL?
+        var spendingLimitsURL: URL?
 
         for url in urls {
             let name = url.lastPathComponent.lowercased()
-            if name.contains("_accounts_") { accountsURL = url }
+            // Check "_spending_limits_" before "_expenses_" — both filenames
+            // contain different markers, but ordering keeps intent explicit.
+            if name.contains("_spending_limits_") { spendingLimitsURL = url }
+            else if name.contains("_accounts_") { accountsURL = url }
             else if name.contains("_categories_") { categoriesURL = url }
             else if name.contains("_tags_") { tagsURL = url }
             else if name.contains("_expenses_") { expensesURL = url }
@@ -43,6 +48,9 @@ struct DataImporter {
         }
         if let url = expensesURL {
             result.expensesCount = try importExpenses(from: url, into: context)
+        }
+        if let url = spendingLimitsURL {
+            result.spendingLimitsCount = try importSpendingLimits(from: url, into: context)
         }
 
         try context.save()
@@ -172,6 +180,25 @@ struct DataImporter {
         return count
     }
 
+    private func importSpendingLimits(from url: URL, into context: ModelContext) throws -> Int {
+        let rows = try parseCSV(url: url).dropFirst()
+        var count = 0
+        for row in rows {
+            guard row.count >= 3, let id = UUID(uuidString: row[0]) else { continue }
+            guard let month = iso8601.date(from: row[1]),
+                  let amount = Decimal(string: row[2]) else { continue }
+            let existing = try fetchSpendingLimit(id: id, context: context)
+            if let limit = existing {
+                limit.month = Budget.normalize(month: month)
+                limit.amount = amount
+            } else {
+                context.insert(SpendingLimit(id: id, month: month, amount: amount))
+            }
+            count += 1
+        }
+        return count
+    }
+
     // MARK: - Fetch helpers
 
     private func fetchAccount(id: UUID, context: ModelContext) throws -> Account? {
@@ -201,6 +228,11 @@ struct DataImporter {
 
     private func fetchExpense(id: UUID, context: ModelContext) throws -> Expense? {
         let descriptor = FetchDescriptor<Expense>(predicate: #Predicate { $0.id == id })
+        return try context.fetch(descriptor).first
+    }
+
+    private func fetchSpendingLimit(id: UUID, context: ModelContext) throws -> SpendingLimit? {
+        let descriptor = FetchDescriptor<SpendingLimit>(predicate: #Predicate { $0.id == id })
         return try context.fetch(descriptor).first
     }
 

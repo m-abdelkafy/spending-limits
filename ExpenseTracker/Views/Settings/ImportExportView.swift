@@ -8,6 +8,7 @@ struct ImportExportView: View {
     @Query private var categories: [Category]
     @Query private var accounts: [Account]
     @Query private var tags: [Tag]
+    @Query private var spendingLimits: [SpendingLimit]
 
     @State private var isShowingShareSheet = false
     @State private var isShowingFilePicker = false
@@ -32,7 +33,7 @@ struct ImportExportView: View {
                     Label("Import from Backup", systemImage: "square.and.arrow.down")
                 }
             } footer: {
-                Text("Export produces 4 CSV files: expenses, categories, accounts, and tags. Select all 4 when importing.")
+                Text("Export produces 5 CSV files: expenses, categories, accounts, tags, and spending limits. Select all 5 when importing.")
             }
 
             Section {
@@ -104,7 +105,8 @@ struct ImportExportView: View {
                 accounts: accounts,
                 categories: categories,
                 tags: tags,
-                expenses: expenses
+                expenses: expenses,
+                spendingLimits: spendingLimits
             )
             isShowingShareSheet = true
         } catch {

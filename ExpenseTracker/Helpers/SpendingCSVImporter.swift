@@ -61,7 +61,7 @@ struct SpendingCSVImporter {
             }
 
             let rawAmount = columns.value(in: row, for: .amount)
-            guard let signed = Decimal(string: rawAmount.replacingOccurrences(of: ",", with: ".")) else {
+            guard let signed = DecimalInput.parse(rawAmount) else {
                 result.skipped += 1
                 continue
             }

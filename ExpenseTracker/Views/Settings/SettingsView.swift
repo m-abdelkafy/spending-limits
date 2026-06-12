@@ -7,6 +7,11 @@ struct SettingsView: View {
     @Query private var categories: [Category]
     @Query private var accounts: [Account]
     @Query private var tags: [Tag]
+    @Query private var spendingLimits: [SpendingLimit]
+
+    private var currentLimit: SpendingLimit? {
+        SpendingLimit.limit(for: .now, in: spendingLimits)
+    }
 
     var body: some View {
         NavigationStack {
@@ -14,6 +19,17 @@ struct SettingsView: View {
                 Section("Privacy") {
                     Toggle(isOn: $hideAmounts) {
                         Label("Hide amounts", systemImage: "eye.slash")
+                    }
+                }
+                Section("Spending limit") {
+                    NavigationLink {
+                        SpendingLimitView()
+                    } label: {
+                        rowLabel(
+                            title: "Monthly limit",
+                            systemImage: "gauge.with.dots.needle.67percent",
+                            detail: currentLimit.map { CurrencyFormatter.string(from: $0.amount) } ?? "Not set"
+                        )
                     }
                 }
                 Section("Library") {
@@ -65,5 +81,5 @@ struct SettingsView: View {
 
 #Preview {
     SettingsView()
-        .modelContainer(for: [Expense.self, Category.self, Account.self, Tag.self, Budget.self], inMemory: true)
+        .modelContainer(for: [Expense.self, Category.self, Account.self, Tag.self, Budget.self, SpendingLimit.self], inMemory: true)
 }
