@@ -45,7 +45,7 @@ struct SpendingLimitView: View {
                 }
             }
 
-            Section("Monthly spending limit") {
+            Section {
                 HStack {
                     Text(CurrencyFormatter.currencySymbol)
                         .foregroundStyle(.secondary)
@@ -53,6 +53,8 @@ struct SpendingLimitView: View {
                         .keyboardType(.decimalPad)
                         .monospacedDigit()
                 }
+            } header: {
+                Text("Monthly spending limit")
             } footer: {
                 Text("Must be greater than the total of your category budgets for this month.")
             }
